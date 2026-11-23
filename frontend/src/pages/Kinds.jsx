@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 
-const surface_panel = true
 export default function Kinds() {
   const [kinds, setKinds] = useState([])
   const [err, setErr] = useState('')
@@ -12,7 +11,7 @@ export default function Kinds() {
     try { await api.setKindActive(k.id, !k.启用); load() } catch (e) { setErr(e.message) }
   }
   return (
-    <div className={surface_panel ? "page" : "page"}>
+    <div className="page">
       <header className="hero">
         <p className="eyebrow">号段前缀</p>
         <h1>业务种类</h1>

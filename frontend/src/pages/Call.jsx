@@ -3,7 +3,6 @@ import { api } from '../api'
 
 const fmt = (s) => (s || '').slice(0, 19).replace('T', ' ')
 
-const surface_panel = true
 export default function Call() {
   const [wins, setWins] = useState([])
   const [wid, setWid] = useState('')
@@ -60,13 +59,13 @@ export default function Call() {
   const win = wins.find(w => String(w.id) === String(wid))
   const current = win?.当前号
   return (
-    <div className={surface_panel ? "page" : "page"}>
+    <div className="page">
       <header className="hero">
         <p className="eyebrow">窗口推进</p>
         <h1>叫号</h1>
         <p className="lede">
           跨种类只认一个口径：窗口可办种类交集内，按取号时刻先进先出，并列以号牌先后破。
-          不可按次挑种类；可办种类在「窗口」页勾选维护。
+          不可按次挑种类；可办种类在「窗口」页勾选维护。跳号会被次序闸整笔回滚。
         </p>
       </header>
       <section className="panel">
@@ -101,10 +100,16 @@ export default function Call() {
             <div className="meta">
               {receipt.规则} · 可办 {receipt.可办种类.map(k => k.名称).join('、')} · 候选 {receipt.候选数}
             </div>
+            {receipt.次序证据 && (
+              <div className="meta">
+                次序证据：事件#{receipt.次序证据.事件} · 应叫 {receipt.次序证据.期望号牌} ·
+                叫到 {receipt.次序证据.叫到号牌} · {receipt.次序证据.一致 ? '一致' : '冲突'}
+              </div>
+            )}
           </div>
         )}
         {current && (
-          <div className="slip" style={{ marginTop: 16 }}>
+          <div className="slip on" style={{ marginTop: 16 }}>
             <div className="no">{current.号牌}</div>
             <div className="meta">{current.业务种类} · {current.状态}</div>
             <div className="actions">
@@ -121,14 +126,15 @@ export default function Call() {
         </div>
         {verify && (
           <p className={verify.一致 ? 'muted' : 'err'}>
-            重放校验{verify.一致 ? '一致' : '存在冲突'}：检查 {verify.检查数} 个叫号/重叫事件（{verify.规则}）
+            重放校验{verify.一致 ? '一致' : `存在 ${verify.冲突数} 处冲突`}：
+            检查 {verify.检查数} 个叫号/重叫事件、{verify.状态检查数} 个末态（{verify.规则}）
           </p>
         )}
         {verify && !verify.一致 && (
           <ul className="plain">
-            {verify.明细.filter(d => d.结果 === '冲突').map(d => (
-              <li key={d.事件} className="err">
-                事件{d.事件} · {d.动作} · {d.号牌} · {d.说明}
+            {verify.明细.filter(d => d.结果 === '冲突').map((d, i) => (
+              <li key={`${d.事件}-${i}`} className="err">
+                {d.事件 != null ? `事件${d.事件} · ` : ''}{d.动作} · {d.号牌} · {d.说明}
               </li>
             ))}
           </ul>

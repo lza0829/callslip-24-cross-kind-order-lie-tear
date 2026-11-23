@@ -115,7 +115,45 @@ def _migrate_call_events(conn) -> None:
     )
 
 
+def _reconcile_legacy_audit(conn) -> None:
+    """旧库收敛：为完全没有审计事件的号牌补齐「取号」锚点与「历史」基线。
+
+    只补一行事件都没有的号牌（幂等）。「取号」事件时刻即真实取号时刻；
+    非等候号的「历史」事件只记录继承下来的事实，**不冒充按谓词叫号**——
+    重放会把它列为「补录」并在墙/总览显式提示，绝不显示为正常次序。
+    有事件却半截的号牌保持原样，交由次序闸拒绝继续写入并以冲突暴露。
+    """
+    import json
+
+    rows = conn.execute(
+        """SELECT t.* FROM tickets t
+           WHERE NOT EXISTS (SELECT 1 FROM call_events e WHERE e.ticket_id=t.id)"""
+    ).fetchall()
+    for r in rows:
+        snap = json.dumps(
+            {"规则": "taken_at_fifo", "可办种类": [r["kind_id"]], "候选数": 1},
+            ensure_ascii=False,
+        )
+        conn.execute(
+            """INSERT INTO call_events(ticket_id, window_id, kind_id, action, created_at, note, snapshot)
+               VALUES (?,NULL,?,'取号',?,'旧库收敛',?)""",
+            (r["id"], r["kind_id"], r["taken_at"], snap),
+        )
+        if r["status"] == "等候":
+            continue
+        ts = r["finished_at"] or r["called_at"] or r["taken_at"]
+        hist = json.dumps(
+            {"规则": "legacy_baseline", "状态": r["status"]}, ensure_ascii=False
+        )
+        conn.execute(
+            """INSERT INTO call_events(ticket_id, window_id, kind_id, action, created_at, note, snapshot)
+               VALUES (?,?,?,'历史',?,'旧库历史状态，非按谓词叫号',?)""",
+            (r["id"], r["window_id"], r["kind_id"], ts, hist),
+        )
+
+
 def init_db() -> None:
     with db() as conn:
         conn.executescript(SCHEMA)
         _migrate_call_events(conn)
+        _reconcile_legacy_audit(conn)

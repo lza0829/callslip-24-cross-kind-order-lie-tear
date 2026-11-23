@@ -42,6 +42,13 @@ def waiting_wall():
         return tic.waiting_wall(conn)
 
 
+@router.get("/可叫集合")
+def callable_set():
+    """跨种类可叫集合：各窗口同一谓词的下一号 + 全局等候次序 + 次序审计。"""
+    with db() as conn:
+        return tic.callable_set(conn)
+
+
 @router.get("/叫号流水")
 def events():
     with db() as conn:

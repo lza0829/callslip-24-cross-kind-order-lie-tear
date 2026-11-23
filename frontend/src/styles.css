@@ -138,6 +138,10 @@ body {
   letter-spacing: .08em;
 }
 .slip .meta { font-size: .85rem; color: #5a5040; margin-top: 4px; }
+.slip.on {
+  border-color: var(--brass);
+  box-shadow: 0 0 0 2px var(--brass), 0 6px 0 #6a5a2a;
+}
 .form { display: grid; gap: 10px; }
 .form.row { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); align-items: end; }
 label { display: flex; flex-direction: column; gap: 6px; font-size: .9rem; color: var(--muted); }

@@ -2,6 +2,7 @@ import { NavLink, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import Take from './pages/Take'
 import Wall from './pages/Wall'
+import Queue from './pages/Queue'
 import Call from './pages/Call'
 import Skip from './pages/Skip'
 import Windows from './pages/Windows'
@@ -12,6 +13,7 @@ const links = [
   ['/', '总览'],
   ['/取号', '取号'],
   ['/等候墙', '等候墙'],
+  ['/序号', '号牌序号'],
   ['/叫号', '叫号'],
   ['/过号', '过号重叫'],
   ['/窗口', '窗口'],
@@ -40,6 +42,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/取号" element={<Take />} />
           <Route path="/等候墙" element={<Wall />} />
+          <Route path="/序号" element={<Queue />} />
           <Route path="/叫号" element={<Call />} />
           <Route path="/过号" element={<Skip />} />
           <Route path="/窗口" element={<Windows />} />

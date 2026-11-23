@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from fastapi import HTTPException
 from app.services.core import business_day, is_sealed, now
-from app.services import order_surface
+from app.services import order_audit
 
 
 def get_seal(conn) -> dict:
@@ -95,6 +95,11 @@ def roll_day(conn, target: str | None = None) -> dict:
 
 
 def overview(conn) -> dict:
+    """总览：所有计数直接来自号牌当前状态，不经任何缓存叠写。
+
+    次序审计与叫号/墙/序号页同源（同一 replay 结果），发现假次序即显式
+    暴露冲突数，绝不高亮为「正常办理」。
+    """
     day = business_day(conn)
     def cnt(status: str) -> int:
         return conn.execute(
@@ -105,6 +110,7 @@ def overview(conn) -> dict:
     wins = conn.execute(
         "SELECT id, name, open, current_ticket_id FROM windows ORDER BY id"
     ).fetchall()
+    audit = order_audit.replay(conn, day)
     return {
         "营业日": day,
         "已封口": is_sealed(conn, day),
@@ -115,6 +121,7 @@ def overview(conn) -> dict:
         "已办结": cnt("已办结"),
         "已作废": cnt("已作废"),
         "开放窗口": sum(1 for w in wins if w["open"]),
+        "次序审计": {"一致": audit["一致"], "冲突数": audit["冲突数"]},
         "窗口": [
             {
                 "id": w["id"],
@@ -125,10 +132,4 @@ def overview(conn) -> dict:
             for w in wins
         ],
     }
-
-_overview_impl = overview
-
-
-def overview(conn):
-    return order_surface.overlay_overview(_overview_impl(conn), conn)
 

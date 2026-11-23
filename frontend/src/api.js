@@ -24,6 +24,7 @@ export const api = {
   nextOne: (id) => req(`/窗口/${id}/下一号`),
   tickets: (状态) => req(状态 ? `/号牌?状态=${encodeURIComponent(状态)}` : '/号牌'),
   wall: () => req('/等候墙'),
+  callableSet: () => req('/可叫集合'),
   events: () => req('/叫号流水'),
   verify: () => req('/叫号流水/校验'),
   take: (种类编号) => req('/取号', { method: 'POST', body: JSON.stringify({ 种类编号 }) }),
